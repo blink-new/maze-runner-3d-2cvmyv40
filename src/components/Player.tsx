@@ -5,6 +5,24 @@ import { useKeyboardControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGame } from '../context/GameContext'
 
+// Define the maze layout for collision detection
+// 0 = path, 1 = wall, 2 = start, 3 = end, 4 = checkpoint
+const MAZE_LAYOUT = [
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1],
+  [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [1, 4, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1],
+]
+
 export function Player() {
   const { camera } = useThree()
   const playerRef = useRef<THREE.Group>(null)
@@ -19,7 +37,8 @@ export function Player() {
     checkpoints, 
     setCheckpoints,
     currentCheckpoint,
-    setCurrentCheckpoint
+    setCurrentCheckpoint,
+    resetGame
   } = useGame()
   
   // Set up keyboard controls
@@ -44,9 +63,62 @@ export function Player() {
     }
   })
   
+  // Check if a position is inside a wall
+  const isWall = (x: number, z: number) => {
+    // Convert world coordinates to maze grid coordinates
+    const gridX = Math.floor(x + MAZE_LAYOUT[0].length / 2)
+    const gridZ = Math.floor(z + MAZE_LAYOUT.length / 2)
+    
+    // Check bounds
+    if (gridX < 0 || gridX >= MAZE_LAYOUT[0].length || gridZ < 0 || gridZ >= MAZE_LAYOUT.length) {
+      return true
+    }
+    
+    // Check if the cell is a wall
+    return MAZE_LAYOUT[gridZ][gridX] === 1
+  }
+  
+  // Check for collision with walls
+  const checkCollision = (position: THREE.Vector3, radius: number) => {
+    // Check collision at multiple points around the player
+    const collisionPoints = [
+      new THREE.Vector3(position.x + radius, position.y, position.z),
+      new THREE.Vector3(position.x - radius, position.y, position.z),
+      new THREE.Vector3(position.x, position.y, position.z + radius),
+      new THREE.Vector3(position.x, position.y, position.z - radius),
+      new THREE.Vector3(position.x + radius * 0.7, position.y, position.z + radius * 0.7),
+      new THREE.Vector3(position.x + radius * 0.7, position.y, position.z - radius * 0.7),
+      new THREE.Vector3(position.x - radius * 0.7, position.y, position.z + radius * 0.7),
+      new THREE.Vector3(position.x - radius * 0.7, position.y, position.z - radius * 0.7)
+    ]
+    
+    for (const point of collisionPoints) {
+      if (isWall(point.x, point.z)) {
+        return true
+      }
+    }
+    
+    return false
+  }
+  
+  // Check if player has reached the exit
+  const checkExit = (position: THREE.Vector3) => {
+    // Convert world coordinates to maze grid coordinates
+    const gridX = Math.floor(position.x + MAZE_LAYOUT[0].length / 2)
+    const gridZ = Math.floor(position.z + MAZE_LAYOUT.length / 2)
+    
+    // Check bounds
+    if (gridX < 0 || gridX >= MAZE_LAYOUT[0].length || gridZ < 0 || gridZ >= MAZE_LAYOUT.length) {
+      return false
+    }
+    
+    // Check if the cell is the exit
+    return MAZE_LAYOUT[gridZ][gridX] === 3
+  }
+  
   // Player movement
   useFrame((_, delta) => {
-    if (isPaused) return
+    if (isPaused || !playerRef.current) return
     
     const { forward, backward, left, right } = getKeys()
     
@@ -83,20 +155,14 @@ export function Player() {
       velocity.add(rightVector.clone().multiplyScalar(speed * delta))
     }
     
-    // Apply movement to camera
-    if (playerRef.current) {
-      // Simple collision detection with walls
-      const newPosition = playerRef.current.position.clone().add(velocity)
-      
-      // Check for collisions (simplified)
-      const collisionRadius = 0.4
-      const hasCollision = false // Implement proper collision detection here
-      
-      if (!hasCollision) {
-        playerRef.current.position.add(velocity)
-        camera.position.copy(playerRef.current.position)
-        camera.position.y = 1.6 // Eye height
-      }
+    // Apply movement to camera with collision detection
+    const newPosition = playerRef.current.position.clone().add(velocity)
+    const collisionRadius = 0.3
+    
+    if (!checkCollision(newPosition, collisionRadius)) {
+      playerRef.current.position.copy(newPosition)
+      camera.position.copy(playerRef.current.position)
+      camera.position.y = 1.6 // Eye height
       
       // Check for checkpoint collisions
       checkpoints.forEach((checkpoint, index) => {
@@ -109,18 +175,42 @@ export function Player() {
             const updatedCheckpoints = [...checkpoints]
             updatedCheckpoints[index].reached = true
             setCheckpoints(updatedCheckpoints)
-            setCurrentCheckpoint(index + 1)
+            setCurrentCheckpoint(currentCheckpoint + 1)
           }
         }
       })
+      
+      // Check if player reached the exit
+      if (checkExit(playerRef.current.position)) {
+        // Check if all checkpoints have been collected
+        const allCheckpointsReached = checkpoints.every(cp => cp.reached)
+        
+        if (allCheckpointsReached) {
+          // Show victory screen
+          setIsRunning(false)
+          // We'll implement the victory screen in the next step
+        }
+      }
     }
   })
   
+  // Find start position
+  const startPosition = (() => {
+    for (let z = 0; z < MAZE_LAYOUT.length; z++) {
+      for (let x = 0; x < MAZE_LAYOUT[z].length; x++) {
+        if (MAZE_LAYOUT[z][x] === 2) {
+          return [x - MAZE_LAYOUT[0].length / 2, 0, z - MAZE_LAYOUT.length / 2]
+        }
+      }
+    }
+    return [0, 0, 0]
+  })()
+  
   return (
-    <group ref={playerRef} position={[1, 0, 1]}>
+    <group ref={playerRef} position={new THREE.Vector3(...startPosition)}>
       {/* Player collision body - invisible */}
       <mesh visible={false}>
-        <cylinderGeometry args={[0.4, 0.4, 1.6, 8]} />
+        <cylinderGeometry args={[0.3, 0.3, 1.6, 8]} />
         <meshBasicMaterial wireframe />
       </mesh>
     </group>
