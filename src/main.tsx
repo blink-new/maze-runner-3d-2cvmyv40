@@ -15,6 +15,9 @@ export enum Controls {
   jump = 'jump',
 }
 
+// Disable context menu to prevent issues with pointer lock
+document.addEventListener('contextmenu', (e) => e.preventDefault())
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <KeyboardControls
     map={[

@@ -1,5 +1,5 @@
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -34,6 +34,8 @@ export function Player({ onVictory }: PlayerProps) {
   const velocityRef = useRef(new THREE.Vector3())
   const directionRef = useRef(new THREE.Vector3())
   const footstepTimeRef = useRef(0)
+  const keysPressed = useRef<Record<string, boolean>>({})
+  
   const { 
     isRunning, 
     setIsRunning, 
@@ -50,55 +52,40 @@ export function Player({ onVictory }: PlayerProps) {
   // Set up keyboard controls with the proper Controls enum
   const [, getKeys] = useKeyboardControls<Controls>()
   
-  // Debug keyboard controls
+  // Manual keyboard tracking for more reliable movement
   useEffect(() => {
-    const debugKeyboard = (e: KeyboardEvent) => {
-      // Manual movement for debugging
-      if (!isPaused && playerRef.current) {
-        const speed = 0.1
-        let moved = false
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase()
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+        keysPressed.current[key] = true
         
-        if (e.key.toLowerCase() === 'w' || e.key === 'ArrowUp') {
-          playerRef.current.position.z -= speed
-          moved = true
-        }
-        if (e.key.toLowerCase() === 's' || e.key === 'ArrowDown') {
-          playerRef.current.position.z += speed
-          moved = true
-        }
-        if (e.key.toLowerCase() === 'a' || e.key === 'ArrowLeft') {
-          playerRef.current.position.x -= speed
-          moved = true
-        }
-        if (e.key.toLowerCase() === 'd' || e.key === 'ArrowRight') {
-          playerRef.current.position.x += speed
-          moved = true
-        }
-        
-        if (moved) {
-          camera.position.copy(playerRef.current.position)
-          camera.position.y = 1.6 // Eye height
-          
-          if (!isRunning) {
-            setIsRunning(true)
-          }
+        // Start the game on first movement
+        if (!isRunning) {
+          setIsRunning(true)
         }
       }
     }
     
-    window.addEventListener('keydown', debugKeyboard)
-    return () => window.removeEventListener('keydown', debugKeyboard)
-  }, [camera, isPaused, isRunning, setIsRunning])
-  
-  // Start the game when player moves
-  useEffect(() => {
-    if (!isRunning) {
-      const handleFirstMove = () => {
-        setIsRunning(true)
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase()
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+        keysPressed.current[key] = false
       }
-      
-      window.addEventListener('keydown', handleFirstMove)
-      return () => window.removeEventListener('keydown', handleFirstMove)
+    }
+    
+    // Handle focus/blur events to prevent stuck keys
+    const handleBlur = () => {
+      keysPressed.current = {}
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
     }
   }, [isRunning, setIsRunning])
   
@@ -175,8 +162,17 @@ export function Player({ onVictory }: PlayerProps) {
   useFrame((_, delta) => {
     if (isPaused || !playerRef.current) return
     
+    // Get movement input from both systems for redundancy
     const { forward, backward, left, right } = getKeys()
-    const isMoving = forward || backward || left || right
+    const keys = keysPressed.current
+    
+    // Combine both input systems for maximum reliability
+    const isForward = forward || keys['w'] || keys['arrowup']
+    const isBackward = backward || keys['s'] || keys['arrowdown']
+    const isLeft = left || keys['a'] || keys['arrowleft']
+    const isRight = right || keys['d'] || keys['arrowright']
+    
+    const isMoving = isForward || isBackward || isLeft || isRight
     
     if (isMoving) {
       playFootstep()
@@ -197,10 +193,10 @@ export function Player({ onVictory }: PlayerProps) {
     direction.normalize()
     
     // Calculate forward/backward movement
-    if (forward) {
+    if (isForward) {
       velocity.add(direction.clone().multiplyScalar(speed * delta))
     }
-    if (backward) {
+    if (isBackward) {
       velocity.add(direction.clone().multiplyScalar(-speed * delta))
     }
     
@@ -208,10 +204,10 @@ export function Player({ onVictory }: PlayerProps) {
     const rightVector = new THREE.Vector3()
     rightVector.crossVectors(camera.up, direction).normalize()
     
-    if (left) {
+    if (isLeft) {
       velocity.add(rightVector.clone().multiplyScalar(-speed * delta))
     }
-    if (right) {
+    if (isRight) {
       velocity.add(rightVector.clone().multiplyScalar(speed * delta))
     }
     

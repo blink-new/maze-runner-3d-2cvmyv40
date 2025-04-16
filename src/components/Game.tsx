@@ -167,7 +167,7 @@ export function Game() {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              pointerEvents: 'none',
+              pointerEvents: 'all', // Changed to 'all' to ensure clicks work
               userSelect: 'none',
               color: 'white',
               fontFamily: 'sans-serif',
@@ -190,6 +190,9 @@ export function Game() {
             <div>
               <p>Click to play</p>
               <p style={{ fontSize: '16px', marginTop: '10px' }}>Use WASD to move and mouse to look around</p>
+              <p style={{ fontSize: '14px', marginTop: '20px', color: '#aaffaa' }}>
+                Hold keys to move continuously
+              </p>
             </div>
           </div>
         </Html>
