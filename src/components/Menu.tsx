@@ -1,16 +1,36 @@
 
 import { Button } from './ui/button'
 import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 
 interface MenuProps {
   onStart: () => void
 }
 
 export function Menu({ onStart }: MenuProps) {
-  const handleClick = () => {
-    console.log("Button clicked")
-    onStart()
-  }
+  const [isPromptVisible, setIsPromptVisible] = useState(false)
+  
+  // Handle Enter key press to start the game
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        console.log("Enter key pressed")
+        onStart()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    
+    // Show the prompt after a short delay
+    const promptTimer = setTimeout(() => {
+      setIsPromptVisible(true)
+    }, 1000)
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      clearTimeout(promptTimer)
+    }
+  }, [onStart])
   
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center bg-black text-white">
@@ -23,14 +43,25 @@ export function Menu({ onStart }: MenuProps) {
         <h1 className="text-6xl font-bold mb-2 tracking-tighter">MAZE RUNNER</h1>
         <p className="text-xl mb-8 text-gray-400">Navigate the labyrinth. Find the exit.</p>
         
-        <button 
-          onClick={handleClick}
-          className="px-8 py-6 text-lg bg-white text-black hover:bg-gray-200 transition-colors rounded-md"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isPromptVisible ? 1 : 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="mb-8"
         >
-          Enter the Maze
-        </button>
+          <div className="text-2xl font-bold text-white">
+            Press <span className="text-yellow-400">ENTER</span> to start
+          </div>
+          <motion.div
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="mt-2 text-yellow-400 text-lg"
+          >
+            ↓
+          </motion.div>
+        </motion.div>
         
-        <div className="mt-12 text-sm text-gray-500">
+        <div className="mt-8 text-sm text-gray-500">
           <p>Use WASD to move and mouse to look around</p>
           <p>Press ESC to pause</p>
         </div>

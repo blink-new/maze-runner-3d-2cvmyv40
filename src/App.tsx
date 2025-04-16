@@ -16,6 +16,11 @@ function App() {
     setIsPlaying(true)
   }
   
+  // Add keyboard focus to the window when the app loads
+  useEffect(() => {
+    window.focus()
+  }, [])
+  
   return (
     <div className="w-full h-screen overflow-hidden bg-black">
       <GameProvider>
