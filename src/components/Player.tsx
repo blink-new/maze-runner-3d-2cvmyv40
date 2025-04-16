@@ -53,8 +53,6 @@ export function Player({ onVictory }: PlayerProps) {
   // Debug keyboard controls
   useEffect(() => {
     const debugKeyboard = (e: KeyboardEvent) => {
-      console.log(`Key pressed: ${e.key}`)
-      
       // Manual movement for debugging
       if (!isPaused && playerRef.current) {
         const speed = 0.1

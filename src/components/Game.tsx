@@ -6,7 +6,8 @@ import {
   PointerLockControls, 
   Stars,
   Sparkles,
-  Cloud
+  Cloud,
+  Html
 } from '@react-three/drei'
 import * as THREE from 'three'
 import { Maze } from './Maze'
@@ -29,6 +30,7 @@ export function Game() {
   } = useGame()
   const [showPauseMenu, setShowPauseMenu] = useState(false)
   const [showVictory, setShowVictory] = useState(false)
+  const [showClickToPlay, setShowClickToPlay] = useState(true)
   
   // Handle keyboard controls for pausing
   useEffect(() => {
@@ -67,6 +69,7 @@ export function Game() {
       if (controlsRef.current && !isPaused && !showVictory) {
         try {
           controlsRef.current.lock()
+          setShowClickToPlay(false)
         } catch (error) {
           console.log("Could not lock controls on click")
         }
@@ -94,6 +97,7 @@ export function Game() {
     setIsPaused(false)
     setShowVictory(false)
     setIsRunning(true)
+    setShowClickToPlay(true)
   }
   
   const handleMainMenu = () => {
@@ -151,7 +155,7 @@ export function Game() {
       )}
       
       {/* Click to start overlay */}
-      {!isPaused && isRunning && !showVictory && (
+      {!isPaused && isRunning && !showVictory && showClickToPlay && (
         <Html fullscreen>
           <div 
             style={{
@@ -176,6 +180,7 @@ export function Game() {
               if (controlsRef.current) {
                 try {
                   controlsRef.current.lock()
+                  setShowClickToPlay(false)
                 } catch (error) {
                   console.log("Could not lock controls on overlay click")
                 }
