@@ -19,6 +19,17 @@ function App() {
   // Add keyboard focus to the window when the app loads
   useEffect(() => {
     window.focus()
+    
+    // Debug keyboard events
+    const logKeyEvent = (e: KeyboardEvent) => {
+      console.log(`Key event: ${e.type}, key: ${e.key}, code: ${e.code}`)
+    }
+    
+    window.addEventListener('keydown', logKeyEvent)
+    
+    return () => {
+      window.removeEventListener('keydown', logKeyEvent)
+    }
   }, [])
   
   return (

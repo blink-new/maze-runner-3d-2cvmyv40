@@ -49,9 +49,32 @@ export function Game() {
       if (isPaused || showVictory) {
         controlsRef.current.unlock()
       } else {
-        controlsRef.current.lock()
+        // Add a small delay to ensure the controls lock properly
+        setTimeout(() => {
+          try {
+            controlsRef.current.lock()
+          } catch (error) {
+            console.log("Could not lock controls, will try again on click")
+          }
+        }, 100)
       }
     }
+  }, [isPaused, showVictory])
+  
+  // Add click handler to lock controls
+  useEffect(() => {
+    const handleClick = () => {
+      if (controlsRef.current && !isPaused && !showVictory) {
+        try {
+          controlsRef.current.lock()
+        } catch (error) {
+          console.log("Could not lock controls on click")
+        }
+      }
+    }
+    
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
   }, [isPaused, showVictory])
   
   // Handle victory
@@ -125,6 +148,46 @@ export function Game() {
           onRestart={handleRestart} 
           onMainMenu={handleMainMenu} 
         />
+      )}
+      
+      {/* Click to start overlay */}
+      {!isPaused && isRunning && !showVictory && (
+        <Html fullscreen>
+          <div 
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              color: 'white',
+              fontFamily: 'sans-serif',
+              fontSize: '24px',
+              textAlign: 'center',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 1000
+            }}
+            onClick={() => {
+              if (controlsRef.current) {
+                try {
+                  controlsRef.current.lock()
+                } catch (error) {
+                  console.log("Could not lock controls on overlay click")
+                }
+              }
+            }}
+          >
+            <div>
+              <p>Click to play</p>
+              <p style={{ fontSize: '16px', marginTop: '10px' }}>Use WASD to move and mouse to look around</p>
+            </div>
+          </div>
+        </Html>
       )}
     </>
   )

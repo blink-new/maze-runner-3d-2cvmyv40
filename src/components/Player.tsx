@@ -50,6 +50,48 @@ export function Player({ onVictory }: PlayerProps) {
   // Set up keyboard controls with the proper Controls enum
   const [, getKeys] = useKeyboardControls<Controls>()
   
+  // Debug keyboard controls
+  useEffect(() => {
+    const debugKeyboard = (e: KeyboardEvent) => {
+      console.log(`Key pressed: ${e.key}`)
+      
+      // Manual movement for debugging
+      if (!isPaused && playerRef.current) {
+        const speed = 0.1
+        let moved = false
+        
+        if (e.key.toLowerCase() === 'w' || e.key === 'ArrowUp') {
+          playerRef.current.position.z -= speed
+          moved = true
+        }
+        if (e.key.toLowerCase() === 's' || e.key === 'ArrowDown') {
+          playerRef.current.position.z += speed
+          moved = true
+        }
+        if (e.key.toLowerCase() === 'a' || e.key === 'ArrowLeft') {
+          playerRef.current.position.x -= speed
+          moved = true
+        }
+        if (e.key.toLowerCase() === 'd' || e.key === 'ArrowRight') {
+          playerRef.current.position.x += speed
+          moved = true
+        }
+        
+        if (moved) {
+          camera.position.copy(playerRef.current.position)
+          camera.position.y = 1.6 // Eye height
+          
+          if (!isRunning) {
+            setIsRunning(true)
+          }
+        }
+      }
+    }
+    
+    window.addEventListener('keydown', debugKeyboard)
+    return () => window.removeEventListener('keydown', debugKeyboard)
+  }, [camera, isPaused, isRunning, setIsRunning])
+  
   // Start the game when player moves
   useEffect(() => {
     if (!isRunning) {
