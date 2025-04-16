@@ -1,8 +1,13 @@
 
 import { useEffect, useMemo } from 'react'
-import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGame } from '../context/GameContext'
+import { 
+  createStoneTexture, 
+  createFloorTexture, 
+  createCheckpointTexture, 
+  createExitTexture 
+} from '../utils/textureLoader'
 
 // Define the maze layout
 // 0 = path, 1 = wall, 2 = start, 3 = end, 4 = checkpoint
@@ -25,19 +30,11 @@ const MAZE_LAYOUT = [
 export function Maze() {
   const { setCheckpoints } = useGame()
   
-  // Load textures
-  const stoneTexture = useTexture('/textures/stone.jpg')
-  const floorTexture = useTexture('/textures/floor.jpg')
-  const checkpointTexture = useTexture('/textures/checkpoint.jpg')
-  const exitTexture = useTexture('/textures/exit.jpg')
-  
-  // Configure textures
-  useMemo(() => {
-    [stoneTexture, floorTexture, checkpointTexture, exitTexture].forEach(texture => {
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping
-      texture.repeat.set(1, 1)
-    })
-  }, [stoneTexture, floorTexture, checkpointTexture, exitTexture])
+  // Create procedural textures
+  const stoneTexture = useMemo(() => createStoneTexture(), [])
+  const floorTexture = useMemo(() => createFloorTexture(), [])
+  const checkpointTexture = useMemo(() => createCheckpointTexture(), [])
+  const exitTexture = useMemo(() => createExitTexture(), [])
   
   // Find checkpoints and set them in context
   useEffect(() => {
