@@ -54,30 +54,6 @@ export function Maze() {
     setCheckpoints(checkpointPositions)
   }, [setCheckpoints])
   
-  // Find start position
-  const startPosition = useMemo(() => {
-    for (let z = 0; z < MAZE_LAYOUT.length; z++) {
-      for (let x = 0; x < MAZE_LAYOUT[z].length; x++) {
-        if (MAZE_LAYOUT[z][x] === 2) {
-          return [x - MAZE_LAYOUT[0].length / 2, 0, z - MAZE_LAYOUT.length / 2]
-        }
-      }
-    }
-    return [0, 0, 0]
-  }, [])
-  
-  // Find end position
-  const endPosition = useMemo(() => {
-    for (let z = 0; z < MAZE_LAYOUT.length; z++) {
-      for (let x = 0; x < MAZE_LAYOUT[z].length; x++) {
-        if (MAZE_LAYOUT[z][x] === 3) {
-          return [x - MAZE_LAYOUT[0].length / 2, 0, z - MAZE_LAYOUT.length / 2]
-        }
-      }
-    }
-    return [0, 0, 0]
-  }, [])
-  
   return (
     <group>
       {/* Floor */}

@@ -68,7 +68,6 @@ export function HUD() {
       <Html
         position={[0, -0.4, -0.5]}
         transform
-        occlude
         style={{
           fontSize: '10px',
           color: 'rgba(255,255,255,0.5)',

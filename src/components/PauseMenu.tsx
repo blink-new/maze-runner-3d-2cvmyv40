@@ -1,7 +1,7 @@
 
 import { Text } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { useGame } from '../context/GameContext'
+import { useGame} from '../context/GameContext'
 
 interface PauseMenuProps {
   onResume: () => void

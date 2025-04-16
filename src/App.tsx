@@ -11,11 +11,16 @@ import './App.css'
 function App() {
   const [isPlaying, setIsPlaying] = useState(false)
   
+  const handleStartGame = () => {
+    console.log("Starting game...")
+    setIsPlaying(true)
+  }
+  
   return (
     <div className="w-full h-screen overflow-hidden bg-black">
       <GameProvider>
         {!isPlaying ? (
-          <Menu onStart={() => setIsPlaying(true)} />
+          <Menu onStart={handleStartGame} />
         ) : (
           <Canvas shadows camera={{ fov: 75, position: [0, 1.6, 0] }}>
             <Suspense fallback={null}>

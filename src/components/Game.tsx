@@ -4,13 +4,9 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { 
   Sky, 
   PointerLockControls, 
-  useTexture, 
-  Text,
-  useKeyboardControls,
   Stars,
   Sparkles,
-  Cloud,
-  Environment
+  Cloud
 } from '@react-three/drei'
 import * as THREE from 'three'
 import { Maze } from './Maze'
