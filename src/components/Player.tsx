@@ -23,11 +23,16 @@ const MAZE_LAYOUT = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1],
 ]
 
-export function Player() {
+interface PlayerProps {
+  onVictory: () => void
+}
+
+export function Player({ onVictory }: PlayerProps) {
   const { camera } = useThree()
   const playerRef = useRef<THREE.Group>(null)
   const velocityRef = useRef(new THREE.Vector3())
   const directionRef = useRef(new THREE.Vector3())
+  const footstepTimeRef = useRef(0)
   const { 
     isRunning, 
     setIsRunning, 
@@ -116,11 +121,25 @@ export function Player() {
     return MAZE_LAYOUT[gridZ][gridX] === 3
   }
   
+  // Play footstep sound
+  const playFootstep = () => {
+    footstepTimeRef.current += 1
+    if (footstepTimeRef.current > 15) {
+      // In a real implementation, we would play a sound here
+      footstepTimeRef.current = 0
+    }
+  }
+  
   // Player movement
   useFrame((_, delta) => {
     if (isPaused || !playerRef.current) return
     
     const { forward, backward, left, right } = getKeys()
+    const isMoving = forward || backward || left || right
+    
+    if (isMoving) {
+      playFootstep()
+    }
     
     // Calculate movement direction
     const speed = 5
@@ -186,9 +205,8 @@ export function Player() {
         const allCheckpointsReached = checkpoints.every(cp => cp.reached)
         
         if (allCheckpointsReached) {
-          // Show victory screen
-          setIsRunning(false)
-          // We'll implement the victory screen in the next step
+          // Trigger victory
+          onVictory()
         }
       }
     }
