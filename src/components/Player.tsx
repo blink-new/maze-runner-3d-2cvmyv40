@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGame } from '../context/GameContext'
+import { Controls } from '../main'
 
 // Define the maze layout for collision detection
 // 0 = path, 1 = wall, 2 = start, 3 = end, 4 = checkpoint
@@ -46,8 +47,8 @@ export function Player({ onVictory }: PlayerProps) {
     resetGame
   } = useGame()
   
-  // Set up keyboard controls
-  const [, getKeys] = useKeyboardControls()
+  // Set up keyboard controls with the proper Controls enum
+  const [, getKeys] = useKeyboardControls<Controls>()
   
   // Start the game when player moves
   useEffect(() => {

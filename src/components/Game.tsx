@@ -19,6 +19,7 @@ import { HUD } from './HUD'
 import { PauseMenu } from './PauseMenu'
 import { VictoryScreen } from './VictoryScreen'
 import { useGame } from '../context/GameContext'
+import { Controls } from '../main'
 
 export function Game() {
   const { camera } = useThree()

@@ -32,7 +32,6 @@ export function HUD() {
           anchorY="middle"
           renderOrder={1000}
           depthTest={false}
-          font="/fonts/Inter-Bold.woff"
         >
           {isRunning ? formattedTime : '00:00.000'}
         </Text>
@@ -48,7 +47,6 @@ export function HUD() {
           anchorY="middle"
           renderOrder={1000}
           depthTest={false}
-          font="/fonts/Inter-Regular.woff"
         >
           {`Checkpoints: ${currentCheckpoint}/${checkpoints.length}`}
         </Text>

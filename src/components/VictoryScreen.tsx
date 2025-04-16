@@ -2,7 +2,6 @@
 import { Text } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useGame } from '../context/GameContext'
-import { motion } from '@react-three/drei'
 
 interface VictoryScreenProps {
   onRestart: () => void
@@ -35,7 +34,6 @@ export function VictoryScreen({ onRestart, onMainMenu }: VictoryScreenProps) {
         anchorY="middle"
         renderOrder={1000}
         depthTest={false}
-        font="/fonts/Inter-Bold.woff"
       >
         VICTORY!
       </Text>
@@ -48,7 +46,6 @@ export function VictoryScreen({ onRestart, onMainMenu }: VictoryScreenProps) {
         anchorY="middle"
         renderOrder={1000}
         depthTest={false}
-        font="/fonts/Inter-Regular.woff"
       >
         {`Your Time: ${formatTime(time)}`}
       </Text>
@@ -71,7 +68,6 @@ export function VictoryScreen({ onRestart, onMainMenu }: VictoryScreenProps) {
           anchorY="middle"
           renderOrder={1000}
           depthTest={false}
-          font="/fonts/Inter-Regular.woff"
         >
           Play Again
         </Text>
@@ -95,7 +91,6 @@ export function VictoryScreen({ onRestart, onMainMenu }: VictoryScreenProps) {
           anchorY="middle"
           renderOrder={1000}
           depthTest={false}
-          font="/fonts/Inter-Regular.woff"
         >
           Main Menu
         </Text>

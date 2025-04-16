@@ -33,7 +33,6 @@ export function PauseMenu({ onResume }: PauseMenuProps) {
         anchorY="middle"
         renderOrder={1000}
         depthTest={false}
-        font="/fonts/Inter-Bold.woff"
       >
         PAUSED
       </Text>
@@ -56,7 +55,6 @@ export function PauseMenu({ onResume }: PauseMenuProps) {
           anchorY="middle"
           renderOrder={1000}
           depthTest={false}
-          font="/fonts/Inter-Regular.woff"
         >
           Resume
         </Text>
@@ -80,7 +78,6 @@ export function PauseMenu({ onResume }: PauseMenuProps) {
           anchorY="middle"
           renderOrder={1000}
           depthTest={false}
-          font="/fonts/Inter-Regular.woff"
         >
           Reset
         </Text>
