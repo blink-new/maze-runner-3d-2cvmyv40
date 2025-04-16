@@ -16,6 +16,7 @@ body {
   background-color: #000;
   color: #fff;
   touch-action: none; /* Prevent touch scrolling */
+  overscroll-behavior: none; /* Prevent pull-to-refresh */
 }
 
 canvas {
@@ -57,4 +58,19 @@ canvas {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/* Debug styles */
+.debug-overlay {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 1000;
+  pointer-events: none;
 }

@@ -20,15 +20,18 @@ function App() {
   useEffect(() => {
     window.focus()
     
-    // Debug keyboard events
-    const logKeyEvent = (e: KeyboardEvent) => {
-      console.log(`Key event: ${e.type}, key: ${e.key}, code: ${e.code}`)
+    // Prevent browser navigation with keyboard
+    const preventNavigation = (e: KeyboardEvent) => {
+      // Prevent browser back/forward navigation
+      if (e.key === 'Backspace' && e.target === document.body) {
+        e.preventDefault()
+      }
     }
     
-    window.addEventListener('keydown', logKeyEvent)
+    window.addEventListener('keydown', preventNavigation)
     
     return () => {
-      window.removeEventListener('keydown', logKeyEvent)
+      window.removeEventListener('keydown', preventNavigation)
     }
   }, [])
   

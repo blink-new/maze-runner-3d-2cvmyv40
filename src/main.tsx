@@ -2,33 +2,21 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Toaster } from 'react-hot-toast'
-import { KeyboardControls } from '@react-three/drei'
 import App from './App'
 import './index.css'
 
-// Define keyboard controls
-export enum Controls {
-  forward = 'forward',
-  backward = 'backward',
-  left = 'left',
-  right = 'right',
-  jump = 'jump',
-}
-
-// Disable context menu to prevent issues with pointer lock
+// Prevent default browser behaviors that might interfere with game controls
 document.addEventListener('contextmenu', (e) => e.preventDefault())
+document.addEventListener('keydown', (e) => {
+  // Prevent arrow keys from scrolling the page
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.key)) {
+    e.preventDefault()
+  }
+}, { passive: false })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <KeyboardControls
-    map={[
-      { name: Controls.forward, keys: ['ArrowUp', 'w', 'W'] },
-      { name: Controls.backward, keys: ['ArrowDown', 's', 'S'] },
-      { name: Controls.left, keys: ['ArrowLeft', 'a', 'A'] },
-      { name: Controls.right, keys: ['ArrowRight', 'd', 'D'] },
-      { name: Controls.jump, keys: ['Space'] },
-    ]}
-  >
+  <React.StrictMode>
     <Toaster position="top-right" />
     <App />
-  </KeyboardControls>
+  </React.StrictMode>
 )

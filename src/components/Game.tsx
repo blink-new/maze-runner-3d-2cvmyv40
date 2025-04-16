@@ -16,7 +16,6 @@ import { HUD } from './HUD'
 import { PauseMenu } from './PauseMenu'
 import { VictoryScreen } from './VictoryScreen'
 import { useGame } from '../context/GameContext'
-import { Controls } from '../main'
 
 export function Game() {
   const { camera } = useThree()
@@ -167,7 +166,7 @@ export function Game() {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              pointerEvents: 'all', // Changed to 'all' to ensure clicks work
+              pointerEvents: 'all',
               userSelect: 'none',
               color: 'white',
               fontFamily: 'sans-serif',
@@ -189,7 +188,7 @@ export function Game() {
           >
             <div>
               <p>Click to play</p>
-              <p style={{ fontSize: '16px', marginTop: '10px' }}>Use WASD to move and mouse to look around</p>
+              <p style={{ fontSize: '16px', marginTop: '10px' }}>Use WASD or Arrow Keys to move</p>
               <p style={{ fontSize: '14px', marginTop: '20px', color: '#aaffaa' }}>
                 Hold keys to move continuously
               </p>
@@ -197,6 +196,30 @@ export function Game() {
           </div>
         </Html>
       )}
+      
+      {/* Movement Controls Debug Overlay */}
+      <Html fullscreen>
+        <div 
+          style={{
+            position: 'absolute',
+            bottom: '10px',
+            left: '10px',
+            padding: '5px 10px',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            color: 'white',
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            borderRadius: '4px',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            display: isRunning && !isPaused && !showVictory ? 'block' : 'none'
+          }}
+        >
+          <div>WASD or Arrow Keys to move</div>
+          <div>Mouse to look around</div>
+          <div>ESC to pause</div>
+        </div>
+      </Html>
     </>
   )
 }

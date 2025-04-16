@@ -1,10 +1,8 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { useKeyboardControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGame } from '../context/GameContext'
-import { Controls } from '../main'
 
 // Define the maze layout for collision detection
 // 0 = path, 1 = wall, 2 = start, 3 = end, 4 = checkpoint
@@ -34,7 +32,8 @@ export function Player({ onVictory }: PlayerProps) {
   const velocityRef = useRef(new THREE.Vector3())
   const directionRef = useRef(new THREE.Vector3())
   const footstepTimeRef = useRef(0)
-  const keysPressed = useRef<Record<string, boolean>>({})
+  const activeKeysRef = useRef<Set<string>>(new Set())
+  const [debugInfo, setDebugInfo] = useState("")
   
   const { 
     isRunning, 
@@ -49,15 +48,15 @@ export function Player({ onVictory }: PlayerProps) {
     resetGame
   } = useGame()
   
-  // Set up keyboard controls with the proper Controls enum
-  const [, getKeys] = useKeyboardControls<Controls>()
-  
-  // Manual keyboard tracking for more reliable movement
+  // Direct keyboard handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase()
+      
+      // Only handle movement keys
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
-        keysPressed.current[key] = true
+        e.preventDefault() // Prevent default browser behavior
+        activeKeysRef.current.add(key)
         
         // Start the game on first movement
         if (!isRunning) {
@@ -69,23 +68,35 @@ export function Player({ onVictory }: PlayerProps) {
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase()
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
-        keysPressed.current[key] = false
+        e.preventDefault() // Prevent default browser behavior
+        activeKeysRef.current.delete(key)
       }
     }
     
-    // Handle focus/blur events to prevent stuck keys
+    // Clear keys when window loses focus
     const handleBlur = () => {
-      keysPressed.current = {}
+      activeKeysRef.current.clear()
     }
     
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
+    // Add event listeners with capture phase to ensure they're processed first
+    window.addEventListener('keydown', handleKeyDown, true)
+    window.addEventListener('keyup', handleKeyUp, true)
     window.addEventListener('blur', handleBlur)
     
+    // Debug info update
+    const debugInterval = setInterval(() => {
+      if (playerRef.current) {
+        const pos = playerRef.current.position
+        const keys = Array.from(activeKeysRef.current).join(', ')
+        setDebugInfo(`Pos: ${pos.x.toFixed(2)}, ${pos.z.toFixed(2)} | Keys: ${keys}`)
+      }
+    }, 100)
+    
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('keydown', handleKeyDown, true)
+      window.removeEventListener('keyup', handleKeyUp, true)
       window.removeEventListener('blur', handleBlur)
+      clearInterval(debugInterval)
     }
   }, [isRunning, setIsRunning])
   
@@ -158,19 +169,16 @@ export function Player({ onVictory }: PlayerProps) {
     }
   }
   
-  // Player movement
+  // Player movement - completely rewritten
   useFrame((_, delta) => {
     if (isPaused || !playerRef.current) return
     
-    // Get movement input from both systems for redundancy
-    const { forward, backward, left, right } = getKeys()
-    const keys = keysPressed.current
-    
-    // Combine both input systems for maximum reliability
-    const isForward = forward || keys['w'] || keys['arrowup']
-    const isBackward = backward || keys['s'] || keys['arrowdown']
-    const isLeft = left || keys['a'] || keys['arrowleft']
-    const isRight = right || keys['d'] || keys['arrowright']
+    // Get active keys
+    const keys = activeKeysRef.current
+    const isForward = keys.has('w') || keys.has('arrowup')
+    const isBackward = keys.has('s') || keys.has('arrowdown')
+    const isLeft = keys.has('a') || keys.has('arrowleft')
+    const isRight = keys.has('d') || keys.has('arrowright')
     
     const isMoving = isForward || isBackward || isLeft || isRight
     
@@ -178,72 +186,70 @@ export function Player({ onVictory }: PlayerProps) {
       playFootstep()
     }
     
-    // Calculate movement direction
-    const speed = 5
-    const velocity = velocityRef.current
+    // Movement speed
+    const speed = 3
     
-    // Reset velocity
-    velocity.x = 0
-    velocity.z = 0
-    
-    // Get camera direction
+    // Get camera direction for forward/backward movement
     const direction = directionRef.current
     camera.getWorldDirection(direction)
-    direction.y = 0
+    direction.y = 0 // Keep movement on the horizontal plane
     direction.normalize()
     
-    // Calculate forward/backward movement
-    if (isForward) {
-      velocity.add(direction.clone().multiplyScalar(speed * delta))
-    }
-    if (isBackward) {
-      velocity.add(direction.clone().multiplyScalar(-speed * delta))
-    }
-    
-    // Calculate left/right movement (perpendicular to camera direction)
+    // Get perpendicular direction for left/right movement
     const rightVector = new THREE.Vector3()
     rightVector.crossVectors(camera.up, direction).normalize()
     
-    if (isLeft) {
-      velocity.add(rightVector.clone().multiplyScalar(-speed * delta))
-    }
-    if (isRight) {
-      velocity.add(rightVector.clone().multiplyScalar(speed * delta))
+    // Calculate movement vector
+    const moveVector = new THREE.Vector3(0, 0, 0)
+    
+    if (isForward) moveVector.add(direction)
+    if (isBackward) moveVector.sub(direction)
+    if (isRight) moveVector.add(rightVector)
+    if (isLeft) moveVector.sub(rightVector)
+    
+    // Normalize and scale by speed and delta time
+    if (moveVector.length() > 0) {
+      moveVector.normalize().multiplyScalar(speed * delta)
     }
     
-    // Apply movement to camera with collision detection
-    const newPosition = playerRef.current.position.clone().add(velocity)
-    const collisionRadius = 0.3
-    
-    if (!checkCollision(newPosition, collisionRadius)) {
-      playerRef.current.position.copy(newPosition)
-      camera.position.copy(playerRef.current.position)
-      camera.position.y = 1.6 // Eye height
+    // Apply movement with collision detection
+    if (moveVector.length() > 0) {
+      const newPosition = playerRef.current.position.clone().add(moveVector)
+      const collisionRadius = 0.3
       
-      // Check for checkpoint collisions
-      checkpoints.forEach((checkpoint, index) => {
-        if (!checkpoint.reached) {
-          const distance = playerRef.current!.position.distanceTo(
-            new THREE.Vector3(...checkpoint.position)
-          )
-          
-          if (distance < 0.7) {
-            const updatedCheckpoints = [...checkpoints]
-            updatedCheckpoints[index].reached = true
-            setCheckpoints(updatedCheckpoints)
-            setCurrentCheckpoint(currentCheckpoint + 1)
-          }
-        }
-      })
-      
-      // Check if player reached the exit
-      if (checkExit(playerRef.current.position)) {
-        // Check if all checkpoints have been collected
-        const allCheckpointsReached = checkpoints.every(cp => cp.reached)
+      if (!checkCollision(newPosition, collisionRadius)) {
+        // Update player position
+        playerRef.current.position.copy(newPosition)
         
-        if (allCheckpointsReached) {
-          // Trigger victory
-          onVictory()
+        // Update camera position to follow player
+        camera.position.copy(playerRef.current.position)
+        camera.position.y = 1.6 // Eye height
+        
+        // Check for checkpoint collisions
+        checkpoints.forEach((checkpoint, index) => {
+          if (!checkpoint.reached) {
+            const distance = playerRef.current!.position.distanceTo(
+              new THREE.Vector3(...checkpoint.position)
+            )
+            
+            if (distance < 0.7) {
+              const updatedCheckpoints = [...checkpoints]
+              updatedCheckpoints[index].reached = true
+              setCheckpoints(updatedCheckpoints)
+              setCurrentCheckpoint(currentCheckpoint + 1)
+            }
+          }
+        })
+        
+        // Check if player reached the exit
+        if (checkExit(playerRef.current.position)) {
+          // Check if all checkpoints have been collected
+          const allCheckpointsReached = checkpoints.every(cp => cp.reached)
+          
+          if (allCheckpointsReached) {
+            // Trigger victory
+            onVictory()
+          }
         }
       }
     }
@@ -268,6 +274,32 @@ export function Player({ onVictory }: PlayerProps) {
         <cylinderGeometry args={[0.3, 0.3, 1.6, 8]} />
         <meshBasicMaterial wireframe />
       </mesh>
+      
+      {/* Debug info */}
+      {isRunning && (
+        <group position={[0, -0.6, -0.5]}>
+          <mesh position={[0, 0, 0]}>
+            <planeGeometry args={[1, 0.2]} />
+            <meshBasicMaterial color="black" transparent opacity={0.7} />
+          </mesh>
+          <sprite scale={[1, 0.2, 1]} position={[0, 0, 0.01]}>
+            <spriteMaterial>
+              <canvasTexture attach="map" args={[(() => {
+                const canvas = document.createElement('canvas')
+                canvas.width = 256
+                canvas.height = 64
+                const ctx = canvas.getContext('2d')!
+                ctx.fillStyle = 'white'
+                ctx.font = '16px monospace'
+                ctx.textAlign = 'center'
+                ctx.textBaseline = 'middle'
+                ctx.fillText(debugInfo, 128, 32)
+                return canvas
+              })()]} />
+            </spriteMaterial>
+          </sprite>
+        </group>
+      )}
     </group>
   )
 }
